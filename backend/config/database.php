@@ -7,22 +7,39 @@
 class Database {
     private static ?PDO $instance = null;
 
-    private static string $host     = 'localhost';
-    private static string $dbname   = 'sipespek_db';
-    private static string $username = 'root';
-    private static string $password = '';
-    private static string $charset  = 'utf8mb4';
-
     /**
      * Get PDO singleton instance
      */
     public static function getConnection(): PDO {
         if (self::$instance === null) {
+            // Default lokal (XAMPP)
+            $host     = 'localhost';
+            $dbname   = 'sipespek_db';
+            $username = 'root';
+            $password = '';
+            $charset  = 'utf8mb4';
+
+            // Override jika ada file konfigurasi khusus hosting / InfinityFree
+            $customConfig = __DIR__ . '/db_config.php';
+            if (file_exists($customConfig)) {
+                $cfg = require $customConfig;
+                $host     = $cfg['host']     ?? $host;
+                $dbname   = $cfg['dbname']   ?? $dbname;
+                $username = $cfg['username'] ?? $username;
+                $password = $cfg['password'] ?? $password;
+                $charset  = $cfg['charset']  ?? $charset;
+            } elseif (getenv('DB_HOST')) {
+                $host     = getenv('DB_HOST');
+                $dbname   = getenv('DB_NAME') ?: $dbname;
+                $username = getenv('DB_USER') ?: $username;
+                $password = getenv('DB_PASS') !== false ? getenv('DB_PASS') : $password;
+            }
+
             $dsn = sprintf(
                 'mysql:host=%s;dbname=%s;charset=%s',
-                self::$host,
-                self::$dbname,
-                self::$charset
+                $host,
+                $dbname,
+                $charset
             );
 
             $options = [

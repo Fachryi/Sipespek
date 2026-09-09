@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Jangan rewrite jika request menuju folder /api (Backend PHP API)
+  RewriteRule ^api/ - [L]
+
+  # Jika file atau folder fisik ada (css, js, gambar, svg), layani langsung
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Semua route lainnya diarahkan ke index.html (React SPA routing)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security: cegah direktori listing
+Options -Indexes

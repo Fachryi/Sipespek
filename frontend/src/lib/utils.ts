@@ -57,4 +57,4 @@ export function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export const BACKEND_URL = 'http://localhost/sipespek/backend';
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';

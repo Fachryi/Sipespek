@@ -7,7 +7,8 @@
  */
 
 // === CORS Headers ===
-header('Access-Control-Allow-Origin: http://localhost:5173');
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+header("Access-Control-Allow-Origin: $origin");
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Access-Control-Allow-Credentials: true');
@@ -40,12 +41,9 @@ if (!is_dir(UPLOAD_DIR)) {
 // === Parse Request ===
 $method  = $_SERVER['REQUEST_METHOD'];
 $uri     = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$baseUri = '/sipespek/backend';
 
-// Strip base path
-if (str_starts_with($uri, $baseUri)) {
-    $uri = substr($uri, strlen($baseUri));
-}
+// Strip base paths (handles local /sipespek/backend, hosting /api, or subdirectories)
+$uri = preg_replace('#^/(sipespek/backend|api)#', '', $uri);
 $uri = rtrim($uri, '/') ?: '/';
 
 // Split URI into segments
