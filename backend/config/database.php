@@ -83,6 +83,24 @@ class Database {
                             }
                         }
                     }
+
+                    // Auto-seed warga & penduduk jika belum ada warga di tabel users
+                    $wargaCount = (int)self::$instance->query("SELECT COUNT(*) FROM users WHERE role = 'warga'")->fetchColumn();
+                    if ($wargaCount === 0) {
+                        self::$instance->exec("
+                            INSERT IGNORE INTO `penduduk` (`id`, `nik`, `no_kk`, `nama`, `tempat_lahir`, `tanggal_lahir`, `jenis_kelamin`, `alamat`, `rt_rw`, `dusun`, `agama`, `status_perkawinan`, `pekerjaan`, `no_hp`) VALUES
+                            (1,'7301010101010001','7301011234567001','Budi Santoso','Wangkar Weli','1990-05-15','L','Jl. Desa Wangkar Weli No. 1','001/001','Dusun I','Islam','Kawin','Petani','082111111111'),
+                            (2,'7301010101010002','7301011234567002','Siti Rahayu','Wangkar Weli','1995-08-20','P','Jl. Desa Wangkar Weli No. 2','001/002','Dusun II','Islam','Belum Kawin','Buruh','082222222222'),
+                            (3,'7301010101010003','7301011234567003','Ahmad Fauzi','Manado','1985-03-10','L','Jl. Desa Wangkar Weli No. 3','002/001','Dusun I','Kristen','Kawin','Wiraswasta','082333333333');
+                        ");
+
+                        self::$instance->exec("
+                            INSERT IGNORE INTO `users` (`id`, `nik`, `username`, `password`, `nama_lengkap`, `no_hp`, `alamat`, `role`, `is_active`) VALUES
+                            (3,'7301010101010003','ahmadfauzi','$2y$10$nmNzozbTgNZ7JdwxHLt9t.Rg8j8HFGPWZ4aTDJPZSXOJFg5VqlF6y','Ahmad Fauzi','082333333333','Jln Wengkar Weli 2','warga',1),
+                            (4,'7301010101010001','budisantoso','$2y$10$nmNzozbTgNZ7JdwxHLt9t.Rg8j8HFGPWZ4aTDJPZSXOJFg5VqlF6y','Budi Santoso','082111111111','Jl. Desa Wangkar Weli No. 1','warga',1),
+                            (5,'7301010101010002','sitirahayu','$2y$10$nmNzozbTgNZ7JdwxHLt9t.Rg8j8HFGPWZ4aTDJPZSXOJFg5VqlF6y','Siti Rahayu','082222222222','Jl. Desa Wangkar Weli No. 2','warga',1);
+                        ");
+                    }
                 } catch (\Throwable $t) {
                     // Abaikan jika auto-migration gagal
                 }
