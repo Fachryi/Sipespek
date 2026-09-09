@@ -31,8 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Aktifkan modul rewrite & headers Apache
-RUN a2enmod rewrite headers
+# Fix Railway / Debian MPM conflict (AH00534): pastikan hanya mpm_prefork yang aktif
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite headers
+
 
 # Konfigurasi VirtualHost agar membaca .htaccess (AllowOverride All)
 COPY docker/apache.conf /etc/apache2/conf-available/sipespek.conf
