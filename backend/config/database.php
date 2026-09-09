@@ -101,6 +101,14 @@ class Database {
                             (5,'7301010101010002','sitirahayu','$2y$10$nmNzozbTgNZ7JdwxHLt9t.Rg8j8HFGPWZ4aTDJPZSXOJFg5VqlF6y','Siti Rahayu','082222222222','Jl. Desa Wangkar Weli No. 2','warga',1);
                         ");
                     }
+
+                    // Pastikan semua user warga memiliki password hash 'warga123' yang valid
+                    $wargaHash = '$2y$10$nmNzozbTgNZ7JdwxHLt9t.Rg8j8HFGPWZ4aTDJPZSXOJFg5VqlF6y';
+                    self::$instance->exec("
+                        UPDATE `users` 
+                        SET `password` = '{$wargaHash}', `is_active` = 1 
+                        WHERE `role` = 'warga' AND (`password` = 'warga123' OR `password` NOT LIKE '\$2y\$%')
+                    ");
                 } catch (\Throwable $t) {
                     // Abaikan jika auto-migration gagal
                 }

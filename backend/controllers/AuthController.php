@@ -77,13 +77,15 @@ class AuthController {
             sendError('Username dan password wajib diisi.');
         }
 
-        $username = sanitize($body['username']);
-        $password = $body['password'];
+        $loginInput = trim(sanitize($body['username']));
+        $password   = trim((string)$body['password']);
 
         $stmt = $this->db->prepare(
-            'SELECT id, nik, username, password, nama_lengkap, no_hp, alamat, role, is_active FROM users WHERE username = ?'
+            'SELECT id, nik, username, password, nama_lengkap, no_hp, alamat, role, is_active 
+             FROM users 
+             WHERE LOWER(username) = LOWER(?) OR nik = ?'
         );
-        $stmt->execute([$username]);
+        $stmt->execute([$loginInput, $loginInput]);
         $user = $stmt->fetch();
 
         if (!$user) {
@@ -94,8 +96,18 @@ class AuthController {
             sendError('Akun Anda telah dinonaktifkan. Hubungi Administrator.', null, 403);
         }
 
-        if (!password_verify($password, $user['password'])) {
+        // Verifikasi password (dukung hash bcrypt maupun plain text fallback)
+        $passwordValid = password_verify($password, $user['password']) || $user['password'] === $password;
+
+        if (!$passwordValid) {
             sendError('Username atau password salah.', null, 401);
+        }
+
+        // Jika password di database berupa plain text, re-hash secara otomatis ke bcrypt
+        if ($user['password'] === $password) {
+            $newHash = password_hash($password, PASSWORD_BCRYPT);
+            $upStmt = $this->db->prepare('UPDATE users SET password = ? WHERE id = ?');
+            $upStmt->execute([$newHash, $user['id']]);
         }
 
         $payload = [
