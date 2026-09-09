@@ -15,7 +15,7 @@ RUN npm run build
 # ==========================================
 FROM php:8.2-apache
 
-# Install sistem dependensi & ekstensi PHP yang dibutuhkan (pdo_mysql, gd)
+# Install sistem dependensi, dos2unix & ekstensi PHP yang dibutuhkan (pdo_mysql, gd)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
     libjpeg-dev \
@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zip \
     unzip \
     curl \
+    dos2unix \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) pdo pdo_mysql gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -30,16 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Aktifkan modul rewrite Apache
+# Aktifkan modul rewrite & headers Apache
 RUN a2enmod rewrite headers
 
 # Konfigurasi VirtualHost agar membaca .htaccess (AllowOverride All)
-RUN echo '<Directory /var/www/html>\n\
-    Options -Indexes +FollowSymLinks\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>' > /etc/apache2/conf-available/sipespek.conf \
-    && a2enconf sipespek
+COPY docker/apache.conf /etc/apache2/conf-available/sipespek.conf
+RUN a2enconf sipespek
 
 WORKDIR /var/www/html
 
@@ -66,8 +63,8 @@ COPY --from=frontend-builder /app/frontend/dist/ /var/www/html/
 RUN chown -R www-data:www-data /var/www/html
 
 # Script startup untuk bind dynamic PORT dari Railway
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN dos2unix /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
 
