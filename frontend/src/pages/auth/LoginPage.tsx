@@ -138,10 +138,12 @@ export default function LoginPage() {
         </div>
 
         {/* Demo credentials hint */}
-        <div className="mt-4 bg-slate-800/50 border border-slate-700/30 rounded-2xl p-4 text-xs text-slate-500">
-          <p className="font-semibold text-slate-400 mb-2">Demo Kredensial:</p>
-          <p>Admin: <span className="text-slate-300">admin / admin123</span></p>
-          <p>Kades: <span className="text-slate-300">kades / kades123</span></p>
+        <div className="mt-4 bg-slate-800/50 border border-slate-700/30 rounded-2xl p-4 text-xs text-slate-500 space-y-1">
+          <p className="font-semibold text-slate-400 mb-1.5">Demo Kredensial:</p>
+          <p>Admin: <span className="text-slate-300 font-mono">admin / admin123</span></p>
+          <p>Kades: <span className="text-slate-300 font-mono">kades / kades123</span></p>
+          <p>Warga: <span className="text-slate-300 font-mono">budisantoso / warga123</span></p>
+          <p className="text-[11px] text-slate-600 italic">(Tersedia juga: sitirahayu / ahmadfauzi)</p>
         </div>
       </div>
     </div>

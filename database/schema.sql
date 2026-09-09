@@ -135,14 +135,18 @@ INSERT INTO jenis_surat (kode_surat, nama_surat, deskripsi, persyaratan) VALUES
 -- SEED DATA — Akun Default (password di-hash bcrypt)
 -- Admin    : admin / admin123
 -- Kades    : kades / kades123
+-- Warga 1  : budisantoso / warga123 (NIK: 7301010101010001)
+-- Warga 2  : sitirahayu / warga123  (NIK: 7301010101010002)
+-- Warga 3  : ahmadfauzi / warga123  (NIK: 7301010101010003)
 -- ============================================================
-INSERT INTO users (nik, username, password, nama_lengkap, no_hp, role) VALUES
+INSERT INTO users (nik, username, password, nama_lengkap, no_hp, alamat, role) VALUES
 (
     NULL,
     'admin',
     '$2y$12$kl2uqvdJReDzJl1Oa9fsI.gsQ2Dcor3Zwuak.hHXxMsaiow6FuFTG',
     'Administrator Desa Wangkar Weli',
     '081234567890',
+    'Kantor Desa Wangkar Weli',
     'admin'
 ),
 (
@@ -151,7 +155,35 @@ INSERT INTO users (nik, username, password, nama_lengkap, no_hp, role) VALUES
     '$2y$12$I4G11vTFF30861g/59UKV.XfMoafab/T.jVkOI2JHAX8hxUZ4Dk12',
     'Kepala Desa Wangkar Weli',
     '081234567891',
+    'Kantor Desa Wangkar Weli',
     'kades'
+),
+(
+    '7301010101010001',
+    'budisantoso',
+    '$2y$10$97U0vMlORd2uMxSIRGMxj.v90A1il4XUXVI5cjYuxyopnAhALS6zS',
+    'Budi Santoso',
+    '082111111111',
+    'Jl. Desa Wangkar Weli No. 1',
+    'warga'
+),
+(
+    '7301010101010002',
+    'sitirahayu',
+    '$2y$10$97U0vMlORd2uMxSIRGMxj.v90A1il4XUXVI5cjYuxyopnAhALS6zS',
+    'Siti Rahayu',
+    '082222222222',
+    'Jl. Desa Wangkar Weli No. 2',
+    'warga'
+),
+(
+    '7301010101010003',
+    'ahmadfauzi',
+    '$2y$10$97U0vMlORd2uMxSIRGMxj.v90A1il4XUXVI5cjYuxyopnAhALS6zS',
+    'Ahmad Fauzi',
+    '082333333333',
+    'Jl. Desa Wangkar Weli No. 3',
+    'warga'
 );
 
 -- ============================================================
