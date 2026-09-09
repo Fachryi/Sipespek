@@ -25,6 +25,10 @@ backend/.env
 .DS_Store
 Thumbs.db
 
+# Deployment artifacts
+deploy-infinityfree/
+*.zip
+
 # Logs
 *.log
 npm-debug.log*

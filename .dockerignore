@@ -1,0 +1,18 @@
+.git
+.gitignore
+.vscode
+.idea
+*.log
+*.zip
+
+# Local dependencies & builds
+frontend/node_modules/
+frontend/dist/
+backend/vendor/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/config/db_config.php
+
+# Docker
+Dockerfile
+.dockerignore

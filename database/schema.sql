@@ -4,8 +4,8 @@
 -- Database Schema
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS sipespek_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE sipespek_db;
+-- CREATE DATABASE IF NOT EXISTS sipespek_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE sipespek_db;
 
 -- ============================================================
 -- Tabel Users (Autentikasi & Role)
