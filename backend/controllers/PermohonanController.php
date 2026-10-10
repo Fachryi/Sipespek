@@ -359,6 +359,163 @@ class PermohonanController {
     }
 
     /**
+     * GET /permohonan/cek-syarat?jenis_surat_id=1
+     * Cek kelayakan warga untuk mengajukan jenis surat tertentu.
+     *
+     * SYARAT DASAR UNIVERSAL (berlaku untuk semua jenis surat):
+     *   1. Usia ≥ 17 tahun ATAU sudah/pernah menikah
+     *      → Semua layanan memerlukan KTP-el sebagai dokumen dasar.
+     *        KTP-el hanya bisa dimiliki oleh warga ≥17 thn atau yang sudah menikah.
+     *   2. Memiliki Kartu Keluarga (no_kk tidak kosong)
+     *      → Warga harus tercatat dalam administrasi kependudukan desa.
+     *   3. Tercatat dalam tabel penduduk desa (validasi otomatis via SELECT)
+     */
+    public function cekSyarat(): void {
+        $authUser     = AuthMiddleware::requireRole('warga');
+        $jenisSuratId = (int) ($_GET['jenis_surat_id'] ?? 0);
+
+        if (!$jenisSuratId) {
+            sendError('Parameter jenis_surat_id wajib diisi.');
+        }
+
+        // Ambil jenis surat
+        $stmt = $this->db->prepare('SELECT * FROM jenis_surat WHERE id = ? AND is_active = 1');
+        $stmt->execute([$jenisSuratId]);
+        $jenisSurat = $stmt->fetch();
+
+        if (!$jenisSurat) {
+            sendError('Jenis surat tidak ditemukan.');
+        }
+
+        // Cari data penduduk berdasarkan NIK warga yang login
+        if (empty($authUser->nik)) {
+            sendSuccess('Kelayakan berhasil dicek.', [
+                'eligible'       => false,
+                'alasan'         => ['NIK Anda belum terdaftar. Silakan hubungi petugas desa untuk melengkapi data kependudukan.'],
+                'data_penduduk'  => null,
+                'kode_surat'     => $jenisSurat['kode_surat'],
+                'syarat_umum'    => $this->getSyaratUmum($jenisSurat['kode_surat']),
+            ]);
+            return;
+        }
+
+        $stmt = $this->db->prepare('SELECT * FROM penduduk WHERE nik = ?');
+        $stmt->execute([$authUser->nik]);
+        $penduduk = $stmt->fetch();
+
+        if (!$penduduk) {
+            sendSuccess('Kelayakan berhasil dicek.', [
+                'eligible'      => false,
+                'alasan'        => ['Data kependudukan Anda belum terdaftar di database desa. Silakan hubungi petugas desa.'],
+                'data_penduduk' => null,
+                'kode_surat'    => $jenisSurat['kode_surat'],
+                'syarat_umum'   => $this->getSyaratUmum($jenisSurat['kode_surat']),
+            ]);
+            return;
+        }
+
+        $eligible = true;
+        $alasan   = [];
+
+        // ================================================================
+        // SYARAT DASAR UNIVERSAL — berlaku untuk SEMUA jenis surat
+        // Dasar pemikiran:
+        //   - KTP-el  → butuh usia ≥ 17 atau menikah + punya KK
+        //   - KK Baru → butuh Foto Copy KTP-el kepala keluarga (artinya
+        //               pemohon harus sudah bisa memiliki KTP-el)
+        //   - Domisili→ butuh Foto Copy KTP pemohon (artinya pemohon
+        //               harus sudah bisa memiliki KTP)
+        //
+        // Karena KTP-el hanya dimiliki oleh seseorang berusia ≥ 17 tahun
+        // ATAU sudah/pernah menikah, maka syarat ini berlaku universal
+        // untuk semua jenis layanan surat kependudukan.
+        // ================================================================
+
+        // Hitung usia
+        $tglLahir     = new \DateTime($penduduk['tanggal_lahir']);
+        $sekarang     = new \DateTime();
+        $usia         = (int) $tglLahir->diff($sekarang)->y;
+        $statusKawin  = strtolower($penduduk['status_perkawinan'] ?? '');
+        $sudahMenikah = in_array($statusKawin, ['kawin', 'cerai hidup', 'cerai mati', 'pernah kawin']);
+
+        // Syarat Dasar 1: Usia ≥ 17 tahun ATAU sudah/pernah menikah
+        if ($usia < 17 && !$sudahMenikah) {
+            $eligible = false;
+            $alasan[] = "Usia Anda saat ini {$usia} tahun. Syarat mengurus surat kependudukan: "
+                      . "minimal berusia 17 tahun atau sudah/pernah menikah, "
+                      . "karena semua layanan memerlukan KTP-el sebagai dokumen dasar.";
+        }
+
+        // Syarat Dasar 2: Memiliki Kartu Keluarga (no_kk terisi)
+        if (empty($penduduk['no_kk'])) {
+            $eligible = false;
+            $alasan[] = 'Anda belum memiliki Kartu Keluarga (KK) atau belum tercatat sebagai warga desa. '
+                      . 'Silakan hubungi petugas desa untuk melengkapi data kependudukan terlebih dahulu.';
+        }
+
+        // Syarat Dasar 3: Tercatat sebagai warga desa
+        // → Sudah divalidasi di atas (lewat tabel penduduk).
+
+        // ================================================================
+        // SYARAT TAMBAHAN SPESIFIK PER JENIS SURAT
+        // (bisa ditambahkan di sini jika diperlukan di masa mendatang)
+        // ================================================================
+        // Contoh: jika KK memerlukan validasi status pernikahan tertentu,
+        // atau Domisili memerlukan minimal masa tinggal, dll.
+
+
+        sendSuccess('Kelayakan berhasil dicek.', [
+            'eligible'      => $eligible,
+            'alasan'        => $alasan,
+            'data_penduduk' => [
+                'nama'              => $penduduk['nama'],
+                'nik'               => $penduduk['nik'],
+                'tanggal_lahir'     => $penduduk['tanggal_lahir'],
+                'status_perkawinan' => $penduduk['status_perkawinan'],
+                'no_kk'             => $penduduk['no_kk'],
+                'dusun'             => $penduduk['dusun'],
+            ],
+            'kode_surat'    => $jenisSurat['kode_surat'],
+            'syarat_umum'   => $this->getSyaratUmum($jenisSurat['kode_surat']),
+        ]);
+    }
+
+    /**
+     * Kembalikan daftar syarat umum (non-berkas) untuk ditampilkan ke warga.
+     * Syarat Dasar Universal sudah disertakan di semua jenis surat.
+     */
+    private function getSyaratUmum(string $kodeSurat): array {
+        // Syarat dasar yang berlaku untuk SEMUA jenis surat
+        $syaratDasar = [
+            ['label' => 'Telah berusia 17 tahun atau sudah/pernah menikah', 'icon' => 'age',   'is_universal' => true],
+            ['label' => 'Memiliki Kartu Keluarga (KK)',                     'icon' => 'kk',    'is_universal' => true],
+            ['label' => 'Tercatat dalam buku penduduk sebagai warga desa',  'icon' => 'warga', 'is_universal' => true],
+        ];
+
+        $syaratSpesifik = [
+            'KTP' => [
+                // KTP tidak punya syarat spesifik tambahan — syarat dasar sudah mencakup semua
+            ],
+            'KK' => [
+                ['label' => 'Foto Copy KTP-el Kepala Keluarga (bagi yang sudah merekam)', 'icon' => 'ktp'],
+                ['label' => 'Buku Nikah atau Akta Perkawinan (bagi pasangan yang sudah menikah)', 'icon' => 'nikah'],
+                ['label' => 'Akta Kelahiran anak atau anggota keluarga jika ada', 'icon' => 'anak'],
+                ['label' => 'Surat Keterangan Lulus atau Ijazah (bagi anak yang masih sekolah)', 'icon' => 'sekolah'],
+                ['label' => 'Surat Keterangan Pindah (apabila berasal dari daerah lain)', 'icon' => 'pindah'],
+            ],
+            'DOMISILI' => [
+                ['label' => 'Foto Copy KTP Pemohon yang masih berlaku', 'icon' => 'ktp'],
+                ['label' => 'Foto Copy Kartu Keluarga (KK)', 'icon' => 'kk'],
+                ['label' => 'Mengisi formulir permohonan keterangan domisili', 'icon' => 'form'],
+            ],
+        ];
+
+        // Gabungkan: syarat dasar universal di atas, lalu syarat spesifik
+        $spesifik = $syaratSpesifik[$kodeSurat] ?? [];
+        return array_merge($syaratDasar, $spesifik);
+    }
+
+    /**
      * GET /jenis-surat
      * List semua jenis surat aktif (public)
      */
@@ -373,5 +530,115 @@ class PermohonanController {
         }
 
         sendSuccess('Jenis surat berhasil dimuat.', $data);
+    }
+
+    /**
+     * GET /public/lacak?query=<NIK_atau_NomorPermohonan>
+     * Pelacakan mandiri — TIDAK memerlukan autentikasi.
+     * Mencari berdasarkan NIK warga ATAU nomor permohonan.
+     * Hanya menampilkan data yang aman untuk publik (tanpa data pribadi sensitif).
+     */
+    public function lacakPublik(): void {
+        $query = sanitize(trim($_GET['query'] ?? ''));
+
+        if (empty($query)) {
+            sendError('Masukkan NIK atau nomor permohonan untuk melacak.');
+        }
+
+        if (strlen($query) < 5) {
+            sendError('Query terlalu pendek. Masukkan NIK (16 digit) atau nomor permohonan.');
+        }
+
+        // Tentukan apakah query adalah NIK (16 digit angka) atau nomor permohonan
+        $isNIK = preg_match('/^\d{16}$/', $query);
+
+        if ($isNIK) {
+            // Cari berdasarkan NIK warga
+            $stmt = $this->db->prepare(
+                "SELECT
+                    ps.nomor_permohonan,
+                    ps.status,
+                    ps.tanggal_pengajuan,
+                    ps.tanggal_persetujuan,
+                    ps.nomor_surat_resmi,
+                    ps.alasan_penolakan,
+                    ps.catatan_admin,
+                    js.nama_surat,
+                    js.kode_surat,
+                    CONCAT(LEFT(u.nama_lengkap, 2), REPEAT('*', GREATEST(0, LENGTH(u.nama_lengkap) - 4)),
+                           RIGHT(u.nama_lengkap, 2)) AS nama_sensor
+                 FROM permohonan_surat ps
+                 JOIN jenis_surat js ON ps.jenis_surat_id = js.id
+                 JOIN users u ON ps.user_id = u.id
+                 WHERE u.nik = ?
+                 ORDER BY ps.tanggal_pengajuan DESC
+                 LIMIT 10"
+            );
+            $stmt->execute([$query]);
+        } else {
+            // Cari berdasarkan nomor permohonan (format: PRM-YYYYMMDD-XXXXXX)
+            $stmt = $this->db->prepare(
+                "SELECT
+                    ps.nomor_permohonan,
+                    ps.status,
+                    ps.tanggal_pengajuan,
+                    ps.tanggal_persetujuan,
+                    ps.nomor_surat_resmi,
+                    ps.alasan_penolakan,
+                    ps.catatan_admin,
+                    js.nama_surat,
+                    js.kode_surat,
+                    CONCAT(LEFT(u.nama_lengkap, 2), REPEAT('*', GREATEST(0, LENGTH(u.nama_lengkap) - 4)),
+                           RIGHT(u.nama_lengkap, 2)) AS nama_sensor
+                 FROM permohonan_surat ps
+                 JOIN jenis_surat js ON ps.jenis_surat_id = js.id
+                 JOIN users u ON ps.user_id = u.id
+                 WHERE ps.nomor_permohonan = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$query]);
+        }
+
+        $results = $stmt->fetchAll();
+
+        if (empty($results)) {
+            sendSuccess('Tidak ada permohonan ditemukan.', [
+                'found'   => false,
+                'query'   => $isNIK ? 'NIK' : 'Nomor Permohonan',
+                'results' => [],
+            ]);
+            return;
+        }
+
+        // Label status dalam bahasa Indonesia
+        $statusLabels = [
+            'pending'            => 'Menunggu Verifikasi Admin',
+            'diverifikasi_admin' => 'Terverifikasi — Menunggu Persetujuan Kepala Desa',
+            'ditolak_admin'      => 'Ditolak oleh Admin Desa',
+            'disetujui_kades'    => 'Disetujui — Surat Siap Diunduh',
+            'ditolak_kades'      => 'Ditolak oleh Kepala Desa',
+        ];
+
+        $statusStages = [
+            'pending'            => 1,
+            'diverifikasi_admin' => 2,
+            'ditolak_admin'      => 0,
+            'disetujui_kades'    => 3,
+            'ditolak_kades'      => 0,
+        ];
+
+        foreach ($results as &$row) {
+            $row['status_label'] = $statusLabels[$row['status']] ?? $row['status'];
+            $row['stage']        = $statusStages[$row['status']] ?? 0;
+            $row['is_selesai']   = $row['status'] === 'disetujui_kades';
+            $row['is_ditolak']   = in_array($row['status'], ['ditolak_admin', 'ditolak_kades']);
+        }
+
+        sendSuccess('Data permohonan ditemukan.', [
+            'found'        => true,
+            'query_type'   => $isNIK ? 'NIK' : 'Nomor Permohonan',
+            'jumlah'       => count($results),
+            'results'      => $results,
+        ]);
     }
 }

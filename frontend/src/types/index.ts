@@ -135,3 +135,26 @@ export interface PaginatedData<T> {
   data: T[];
   pagination: Pagination;
 }
+
+export interface SyaratUmum {
+  label: string;
+  icon: string;
+  is_universal?: boolean; // true = syarat dasar universal (usia/KK/warga), berlaku semua jenis surat
+}
+
+export interface DataPendudukRingkas {
+  nama: string;
+  nik: string;
+  tanggal_lahir: string;
+  status_perkawinan: string;
+  no_kk: string;
+  dusun: string;
+}
+
+export interface CekSyaratResponse {
+  eligible: boolean;
+  alasan: string[];
+  data_penduduk: DataPendudukRingkas | null;
+  kode_surat: string;
+  syarat_umum: SyaratUmum[];
+}

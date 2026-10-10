@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, FileText, LogIn, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, ArrowLeft, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { type ApiResponse, type AuthResponse, type Role } from '@/types';
@@ -12,24 +12,22 @@ const DASHBOARD_MAP: Record<Role, string> = {
 };
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername]         = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading]       = useState(false);
+  const [error, setError]               = useState('');
 
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login }  = useAuth();
+  const navigate   = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!username || !password) {
       setError('Username dan password wajib diisi.');
       return;
     }
-
     try {
       setIsLoading(true);
       const res = await api.post<ApiResponse<AuthResponse>>('/auth/login', { username, password });
@@ -45,105 +43,169 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      {/* Background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #003a1a 0%, #166534 60%, #0f766e 100%)' }}
+    >
+      {/* Gold top strip */}
+      <div className="fixed top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #ca8a04, #fbbf24, #ca8a04)' }} />
 
-      <div className="w-full max-w-md relative animate-fade-in-up">
+      <div className="w-full max-w-md animate-fade-in-up">
+        {/* Header brand */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex flex-col items-center gap-3">
+            <img
+              src="/logo.jpeg"
+              alt="Logo Desa Wangkar Weli"
+              className="w-16 h-16 rounded-full object-cover border-4 shadow-xl"
+              style={{ borderColor: '#fbbf24' }}
+            />
+            <div>
+              <div className="text-white font-bold text-xl tracking-wide" style={{ fontFamily: 'Source Serif 4' }}>
+                SIPESPEK
+              </div>
+              <div className="text-green-200 text-xs" style={{ fontFamily: 'Manrope' }}>
+                Desa Wangkar Weli — Kabupaten Manggarai Timur
+              </div>
+            </div>
+          </Link>
+        </div>
+
         {/* Card */}
-        <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-flex flex-col items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl">
-                <FileText size={28} className="text-white" />
-              </div>
-              <div>
-                <div className="text-white font-bold text-xl">SIPESPEK</div>
-                <div className="text-slate-400 text-xs">Desa Wangkar Weli</div>
-              </div>
-            </Link>
+        <div
+          className="rounded-lg overflow-hidden shadow-2xl"
+          style={{ background: '#fff', border: '1px solid #e2e8f0' }}
+        >
+          {/* Card header */}
+          <div className="px-6 py-4" style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
+            <h1 className="font-bold text-lg" style={{ fontFamily: 'Source Serif 4', color: '#0f172a' }}>
+              Masuk ke Akun Warga
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: '#475569', fontFamily: 'Manrope' }}>
+              Gunakan username dan password yang telah Anda daftarkan
+            </p>
           </div>
 
-          <h1 className="text-white font-bold text-xl text-center mb-1">Masuk ke Akun</h1>
-          <p className="text-slate-400 text-sm text-center mb-6">Gunakan username dan password Anda untuk masuk</p>
-
-          {/* Error */}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-5 text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-slate-300 text-sm font-medium block mb-1.5">Username</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan username"
-                className="w-full bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/60 transition-all"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label className="text-slate-300 text-sm font-medium block mb-1.5">Password</label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password"
-                  className="w-full bg-slate-700/50 border border-slate-600/50 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/60 transition-all"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+          {/* Form */}
+          <div className="px-6 py-6">
+            {/* Error */}
+            {error && (
+              <div
+                className="flex items-start gap-2 p-3 rounded mb-5 text-sm"
+                style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#7f1d1d', fontFamily: 'Manrope' }}
+              >
+                <Shield size={15} className="flex-shrink-0 mt-0.5" style={{ color: '#dc2626' }} />
+                {error}
               </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Username */}
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-semibold mb-1.5"
+                  style={{ color: '#0f172a', fontFamily: 'Manrope' }}
+                >
+                  Username <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Masukkan username"
+                  className="civic-input"
+                  disabled={isLoading}
+                  autoComplete="username"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold mb-1.5"
+                  style={{ color: '#0f172a', fontFamily: 'Manrope' }}
+                >
+                  Password <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Masukkan password"
+                    className="civic-input"
+                    style={{ paddingRight: '44px' }}
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    style={{ color: '#94a3b8' }}
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                id="btn-login"
+                disabled={isLoading}
+                className="btn-primary w-full mt-2"
+                style={{ borderRadius: '4px', height: '44px', fontSize: '14px' }}
+              >
+                {isLoading
+                  ? <><Loader2 size={16} className="animate-spin" /> Memproses...</>
+                  : <><LogIn size={16} /> Masuk ke Sistem</>
+                }
+              </button>
+            </form>
+
+            <p className="text-center text-sm mt-5" style={{ color: '#475569', fontFamily: 'Manrope' }}>
+              Belum punya akun?{' '}
+              <Link to="/register" className="font-semibold hover:underline" style={{ color: '#166534' }}>
+                Daftar sebagai Warga
+              </Link>
+            </p>
+
+            <div className="mt-4 pt-4 text-center" style={{ borderTop: '1px solid #f1f5f9' }}>
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 text-xs transition-colors hover:opacity-70"
+                style={{ color: '#94a3b8', fontFamily: 'Manrope' }}
+              >
+                <ArrowLeft size={13} /> Kembali ke Beranda
+              </Link>
             </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              id="btn-login"
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-semibold text-sm hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.01] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100 mt-2"
-            >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-              {isLoading ? 'Memproses...' : 'Masuk'}
-            </button>
-          </form>
-
-          <p className="text-center text-slate-400 text-sm mt-6">
-            Belum punya akun?{' '}
-            <Link to="/register" className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
-              Daftar sebagai Warga
-            </Link>
-          </p>
-
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
-            <Link to="/" className="flex items-center justify-center text-slate-500 hover:text-slate-300 text-xs transition-colors gap-1">
-              ← Kembali ke Beranda
-            </Link>
           </div>
         </div>
 
-        {/* Demo credentials hint */}
-        <div className="mt-4 bg-slate-800/50 border border-slate-700/30 rounded-2xl p-4 text-xs text-slate-500 space-y-1">
-          <p className="font-semibold text-slate-400 mb-1.5">Demo Kredensial:</p>
-          <p>Admin: <span className="text-slate-300 font-mono">admin / admin123</span></p>
-          <p>Kades: <span className="text-slate-300 font-mono">kades / kades123</span></p>
-          <p>Warga: <span className="text-slate-300 font-mono">budisantoso / warga123</span></p>
-          <p className="text-[11px] text-slate-600 italic">(Tersedia juga: sitirahayu / ahmadfauzi)</p>
+        {/* Demo credentials */}
+        <div
+          className="mt-4 rounded-lg p-4 text-xs space-y-1"
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', fontFamily: 'Manrope' }}
+        >
+          <p className="font-bold uppercase tracking-wider mb-2" style={{ color: '#fbbf24', fontSize: '10px' }}>
+            Demo Kredensial
+          </p>
+          {[
+            { role: 'Admin',  cred: 'admin / admin123' },
+            { role: 'Kades',  cred: 'kades / kades123' },
+            { role: 'Warga ✅', cred: 'rinasafitri / password123' },
+            { role: 'Warga ❌', cred: 'donipratama / password123' },
+          ].map((d) => (
+            <div key={d.role} className="flex justify-between">
+              <span style={{ color: '#86efac' }}>{d.role}:</span>
+              <span className="font-mono" style={{ color: '#fff', letterSpacing: '0.02em' }}>{d.cred}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

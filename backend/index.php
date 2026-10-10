@@ -91,6 +91,13 @@ try {
         }
 
     // --------------------------------------------------------
+    // PUBLIC LACAK (Pelacakan Mandiri — tanpa auth)
+    // --------------------------------------------------------
+    } elseif (($segments[0] ?? '') === 'public' && ($segments[1] ?? '') === 'lacak' && $method === 'GET') {
+        $ctrl = new PermohonanController();
+        $ctrl->lacakPublik();
+
+    // --------------------------------------------------------
     // JENIS SURAT ROUTES
     // --------------------------------------------------------
     } elseif (($segments[0] ?? '') === 'jenis-surat') {
@@ -106,6 +113,8 @@ try {
 
         if ($sub === 'all' && $method === 'GET') {
             $ctrl->all();
+        } elseif ($sub === 'cek-syarat' && $method === 'GET') {
+            $ctrl->cekSyarat();
         } elseif ($sub === null && $method === 'GET') {
             $ctrl->myPermohonan();
         } elseif ($sub === null && $method === 'POST') {
